@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Planning App</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen active">
+        <div class="container">
+            <div class="login-card">
+                <h1 class="app-title">Login</h1>
+                <div class="google-signin">
+                    <button class="google-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        Google
+                    </button>
+                </div>
+                <div class="auth-divider">
+                    <span>or</span>
+                </div>
+                <form class="login-form">
+                    <div class="input-group">
+                        <input type="text" id="username" placeholder="Email" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="password" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="primary-btn">Continue</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Welcome Screen 1 -->
+    <div id="welcome-screen" class="screen">
+        <div class="container">
+            <div class="onboarding-card">
+                <div class="welcome-header">
+                    <h1 class="welcome-title">Welcome</h1>
+                    <div class="input-group">
+                        <input type="text" id="name-input" placeholder="Your Name Here" required>
+                    </div>
+                </div>
+                <p class="subtitle">Let's Get to Know You!</p>
+                <form class="onboarding-form">
+                    <button type="submit" class="primary-btn">Next</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Onboarding Screen 2 -->
+    <div id="details-screen" class="screen">
+        <div class="container">
+            <div class="onboarding-card">
+                <h2 class="section-title">Tell Us About Yourself</h2>
+                <form class="onboarding-form">
+                    <div class="input-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" placeholder="Age" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="bank">Current Bank</label>
+                        <input type="text" id="bank" placeholder="Current Bank" required>
+                        <div class="disclaimer">
+                            <small>We will never ask for your login credentials or personal banking information. This helps prioritize relevant information for you.</small>
+                        </div>
+                    </div>
+                    <button type="submit" class="primary-btn">Next</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Onboarding Screen 3 -->
+    <div id="goals-screen" class="screen">
+        <div class="container">
+            <div class="onboarding-card">
+                <h2 class="section-title">Your Financial Goals</h2>
+                <form class="onboarding-form">
+                    <div class="input-group">
+                        <label>Select Your Goals</label>
+                        <div class="goals-grid">
+                            <label class="goal-chip">
+                                <input type="checkbox" value="saving">
+                                <span>Saving</span>
+                            </label>
+                            <label class="goal-chip">
+                                <input type="checkbox" value="investing">
+                                <span>Investing</span>
+                            </label>
+                            <label class="goal-chip">
+                                <input type="checkbox" value="growing">
+                                <span>Growing</span>
+                            </label>
+                            <label class="goal-chip">
+                                <input type="checkbox" value="learning">
+                                <span>Learning</span>
+                            </label>
+                            <label class="goal-chip">
+                                <input type="checkbox" id="emergency-fund" value="emergency-fund">
+                                <span>Emergency Fund</span>
+                            </label>
+                            <label class="goal-chip">
+                                <input type="checkbox" id="debt-payoff" value="debt-payoff">
+                                <span>Debt Payoff</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="timeline-container">
+                        <label class="timeline-label">Investment Timeline</label>
+                        <div class="timeline-slider-container">
+                            <input type="range" class="timeline-slider" id="timeline" min="1" max="30" value="5">
+                            <span class="timeline-value" id="timeline-value">5 years</span>
+                        </div>
+                    </div>
+                    <button type="submit" class="primary-btn">Create Dashboard</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="screen">
+        <div class="container">
+            <div class="loading-card">
+                <div class="loading-spinner"></div>
+                <h2>Creating Custom Dashboard...</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div id="dashboard-screen" class="screen">
+        <div class="container">
+            <div class="dashboard-header">
+                <div class="dashboard-greeting">
+                    <h1 id="greeting-text">Hi, User!</h1>
+                    <p>Here's your financial overview</p>
+                </div>
+                <div class="profile-icon">O</div>
+            </div>
+            <div class="dashboard-content">
+                <!-- User Profile Section -->
+                <div class="user-profile-card">
+                    <h3>Your Financial Profile</h3>
+                    <div class="profile-content">
+                        <div class="profile-item">
+                            <span class="profile-label">Age:</span>
+                            <span class="profile-value" id="profile-age">--</span>
+                        </div>
+                        <div class="profile-item">
+                            <span class="profile-label">Bank:</span>
+                            <span class="profile-value" id="profile-bank">--</span>
+                        </div>
+                        <div class="profile-item">
+                            <span class="profile-label">Goals:</span>
+                            <div class="profile-tags" id="profile-goals">
+                                <!-- Will be populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-grid">
+                    <div class="dashboard-card medium">
+                        <h3>Account Overview</h3>
+                        <div class="card-content">
+                            <!-- Content will be populated dynamically -->
+                        </div>
+                    </div>
+                    <div class="dashboard-card medium">
+                        <h3>Investment Portfolio</h3>
+                        <div class="card-content">
+                            <!-- Content will be populated dynamically -->
+                        </div>
+                    </div>
+                    <div class="dashboard-card small">
+                        <h3>Quick Actions</h3>
+                        <div class="card-content">
+                            <button class="action-btn">View Transactions</button>
+                            <button class="action-btn">Set Budget</button>
+                        </div>
+                    </div>
+                    <div class="dashboard-card small">
+                        <h3>Ask Anything</h3>
+                        <div class="card-content">
+                            <input type="text" placeholder="Type your question..." class="question-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
