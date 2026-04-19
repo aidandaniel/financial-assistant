@@ -2,10 +2,9 @@
    FINSIGHT AI — STYLES
    Aesthetic: Clean minimal. Swiss-influenced.
    One accent colour. Type does the work.
-   Font: DM Sans (body) + DM Serif Display (headings)
+   Font: Inter (body) + Rubik (headings)
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Serif+Display:ital@0;1&display=swap');
 
 /* ---- TOKENS ---- */
 :root {
@@ -32,8 +31,8 @@
   --radius-md:    12px;
   --radius-lg:    20px;
   --radius-xl:    28px;
-  --font-body:    'DM Sans', sans-serif;
-  --font-display: 'DM Serif Display', serif;
+  --font-body:    'Inter', sans-serif;
+  --font-display: 'Rubik', sans-serif;
 }
 
 /* ---- RESET ---- */
@@ -101,8 +100,8 @@ body {
   position: relative;
 }
 
-/* accent dot top-left — subtle brand mark */
-.login-card::after,
+/* accent dot removed - cleaner design */
+/* .login-card::after,
 .onboarding-card::after {
   content: '';
   position: absolute;
@@ -112,7 +111,7 @@ body {
   height: 8px;
   border-radius: 50%;
   background: var(--accent);
-}
+} */
 
 /* ---- AUTH TYPOGRAPHY ---- */
 .app-title {
@@ -123,6 +122,7 @@ body {
   letter-spacing: -0.5px;
   margin-bottom: 6px;
   line-height: 1.1;
+  text-align: center;
 }
 
 .section-title {
