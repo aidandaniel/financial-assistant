@@ -114,10 +114,14 @@
                                 <input type="checkbox" id="debt-payoff" value="debt-payoff">
                                 <span>Debt Payoff</span>
                             </label>
+                            <div class="custom-goal-container">
+                                <label class="custom-goal-label">Custom Goal</label>
+                                <input type="text" id="custom-goal" placeholder="Type your custom goal..." class="custom-goal-input">
+                            </div>
                         </div>
                     </div>
                     <div class="timeline-container">
-                        <label class="timeline-label">Investment Timeline</label>
+                        <label class="timeline-label">Timeline</label>
                         <div class="timeline-slider-container">
                             <input type="range" class="timeline-slider" id="timeline" min="1" max="30" value="5">
                             <span class="timeline-value" id="timeline-value">5 years</span>
@@ -202,6 +206,7 @@
         </div>
     </div>
 
+    <script src="frontend-api.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

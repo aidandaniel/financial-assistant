@@ -182,12 +182,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const welcomeForm = document.querySelector('#welcome-screen .onboarding-form');
   if (welcomeForm) {
     const nameInput = document.getElementById('name-input');
-    if (nameInput) {
-      nameInput.addEventListener('input', function () {
-        const title = document.querySelector('.welcome-title');
-        if (title) title.textContent = this.value ? `Welcome, ${this.value}` : 'Welcome';
-      });
-    }
+    // Removed live name update - name only appears in input field
 
     welcomeForm.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -216,12 +211,31 @@ document.addEventListener('DOMContentLoaded', function () {
         'RBC', 'Royal Bank', 'TD', 'Toronto-Dominion', 'Scotiabank',
         'BMO', 'Bank of Montreal', 'CIBC', 'National Bank', 'Desjardins',
         'Tangerine', 'Simplii', 'EQ Bank', 'HSBC', 'ATB Financial',
-        'Meridian', 'Laurentian', 'Manulife Bank', 'PC Financial', 'Motusbank'
+        'Meridian', 'Laurentian', 'Manulife Bank', 'PC Financial', 'Motusbank',
+        'Bank of China (Canada)', 'Bank of Nova Scotia', 'Canadian Imperial Bank of Commerce',
+        'Canadian Western Bank', 'Caisses Populaires Acadiennes', 'Central 1 Credit Union',
+        'CIBC Mortgage Corp.', 'Coast Capital Savings', 'Conexus Credit Union',
+        'Connect First Credit Union', 'Copperfin Technology', 'Desjardins',
+        'DUCA Financial', 'Equitable Bank', 'First Nations Bank of Canada',
+        'FirstOntario', 'Financial 15 Bank', 'Forward Bank',
+        'G&F Financial Group', 'Habitations Côté Ouest', 'Home Bank',
+        'Home Trust Company', 'ICICI Bank Canada', 'Industrial Alliance Credit Union',
+        'Ing Bank', 'Jubilee Financial', 'KOHO Financial',
+        'Laurentian Bank of Canada', 'Libro Credit Union', 'Luminus Financial',
+        'Manulife Bank of Canada', 'Meridian Credit Union', 'Motive Financial',
+        'Neo Financial', 'North Shore Credit Union', 'Northern Credit Bureaus',
+        'Ontario Teachers Pension Plan', 'Pacific & Western Bank of Canada',
+        'Peoples Trust Company', 'Public Savings Bank', 'RFA Financial',
+        'Rogers Bank', 'Royal Bank of Canada', 'Royal Trust Company',
+        'Servus Credit Union', 'Simplii Financial', 'Steinbach Credit Union',
+        'Sun Life Financial', 'Tangerine Bank', 'TD Bank',
+        'UNI Financial', 'VanCity Credit Union', 'Vancity',
+        'VersaBank', 'Wealthsimple', 'Wise Bank', 'Zagbank'
       ];
 
       if (!canadianBanks.some(b => bank.toLowerCase().includes(b.toLowerCase()))) {
         showValidationPopup('Bank Not Recognized',
-          'Please enter a recognized Canadian bank — RBC, TD, Scotiabank, BMO, CIBC, EQ Bank, and others are supported.');
+          'Please enter a recognized Canadian bank. We support all major banks including RBC, TD, Scotiabank, BMO, CIBC, and many others.');
         return;
       }
 
@@ -246,8 +260,23 @@ document.addEventListener('DOMContentLoaded', function () {
     goalsForm.addEventListener('submit', function (e) {
       e.preventDefault();
       const checked = document.querySelectorAll('.goal-chip input[type="checkbox"]:checked');
-      if (checked.length === 0) { showInlineError(goalsForm, 'Please select at least one goal.'); return; }
-      userData.goals    = Array.from(checked).map(cb => cb.value);
+      const customGoal = document.getElementById('custom-goal').value.trim();
+      
+      if (checked.length === 0 && !customGoal) { 
+        showInlineError(goalsForm, 'Please select at least one goal or enter a custom goal.'); 
+        return; 
+      }
+      
+      // Allow custom goal without requiring predefined selections
+      const goals = Array.from(checked).map(cb => cb.value);
+      if (customGoal) {
+        goals.push('custom');
+        userData.customGoal = customGoal;
+      }
+      
+      userData.goals = goals;
+      
+      userData.goals = goals;
       userData.timeline = document.getElementById('timeline').value;
       showScreen('loading-screen');
       startLoadingSequence();
@@ -338,16 +367,18 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Profile icon — sign out
+  // Profile icon — customization menu
   const profileIcon = document.querySelector('.profile-icon');
+  let isCustomizeMode = false;
+  
   if (profileIcon) {
     profileIcon.addEventListener('click', function () {
-      if (confirm(`Sign out of ${userData.email}?`)) {
-        auth.signOut().then(() => {
-          userData = { email:'', name:'', age:'', bank:'', goals:[], timeline:5, literacyLevel:null, isNewUser:true };
-          showScreen('login-screen');
-        });
+      if (!isCustomizeMode) {
+        showCustomizationMenu();
+      } else {
+        hideCustomizationMenu();
       }
+      isCustomizeMode = !isCustomizeMode;
     });
   }
 });
@@ -531,14 +562,134 @@ function populateUserProfile() {
   }
 }
 
-function populateDashboardCards() {
+async function populateDashboardCards() {
+  try {
+    // Get personalized dashboard cards from backend
+    const response = await finsightAPI.getPersonalizedDashboard(userData.id || 1);
+    const cards = response.cards;
+    
+    // Clear existing cards
+    const dashboardContent = document.querySelector('.dashboard-content');
+    const existingCards = dashboardContent.querySelectorAll('.dashboard-card');
+    existingCards.forEach(card => card.remove());
+    
+    // Create personalized cards
+    cards.forEach((cardData, index) => {
+      const card = createPersonalizedCard(cardData, index);
+      dashboardContent.appendChild(card);
+    });
+    
+    // Add edit buttons to all dashboard cards
+    addCardEditButtons();
+    
+  } catch (error) {
+    console.error('Error loading personalized dashboard:', error);
+    // Fallback to original cards if API fails
+    populateFallbackCards();
+  }
+}
+
+function createPersonalizedCard(cardData, index) {
+  const card = document.createElement('div');
+  card.className = 'dashboard-card medium personalized-card';
+  card.dataset.cardId = cardData.id;
+  card.dataset.cardType = cardData.cardType;
+  
+  const cardContent = document.createElement('div');
+  cardContent.className = 'card-content';
+  
+  // Different card layouts based on type
+  switch (cardData.cardType) {
+    case 'EDUCATIONAL':
+      cardContent.innerHTML = `
+        <div class="card-header">
+          <h3>${cardData.title}</h3>
+          <span class="card-type-badge educational">Educational</span>
+        </div>
+        <div class="card-body">
+          <p>${cardData.description}</p>
+          <div class="personalized-content">${cardData.personalizedContent}</div>
+          ${cardData.learningResourceUrl ? 
+            `<button class="learn-more-btn" onclick="openLearningResource('${cardData.learningResourceUrl}')">Learn More</button>` : ''}
+        </div>
+      `;
+      break;
+      
+    case 'CALCULATOR':
+      cardContent.innerHTML = `
+        <div class="card-header">
+          <h3>${cardData.title}</h3>
+          <span class="card-type-badge calculator">Calculator</span>
+        </div>
+        <div class="card-body">
+          <p>${cardData.description}</p>
+          <div class="calculator-content">
+            <div class="personalized-content">${cardData.personalizedContent}</div>
+            <button class="calculate-btn" onclick="openCalculator('${cardData.id}')">Calculate</button>
+          </div>
+        </div>
+      `;
+      break;
+      
+    case 'QUIZ':
+      cardContent.innerHTML = `
+        <div class="card-header">
+          <h3>${cardData.title}</h3>
+          <span class="card-type-badge quiz">Quiz</span>
+        </div>
+        <div class="card-body">
+          <p>${cardData.description}</p>
+          <div class="personalized-content">${cardData.personalizedContent}</div>
+          <button class="quiz-btn" onclick="startQuickQuiz('${cardData.id}')">Start Quiz</button>
+        </div>
+      `;
+      break;
+      
+    case 'RECOMMENDATION':
+      cardContent.innerHTML = `
+        <div class="card-header">
+          <h3>${cardData.title}</h3>
+          <span class="card-type-badge recommendation">Recommendation</span>
+        </div>
+        <div class="card-body">
+          <p>${cardData.description}</p>
+          <div class="personalized-content">${cardData.personalizedContent}</div>
+          ${cardData.learningResourceUrl ? 
+            `<button class="explore-btn" onclick="openLearningResource('${cardData.learningResourceUrl}')">Explore</button>` : ''}
+        </div>
+      `;
+      break;
+      
+    default:
+      cardContent.innerHTML = `
+        <div class="card-header">
+          <h3>${cardData.title}</h3>
+          <span class="card-type-badge general">${cardData.cardType}</span>
+        </div>
+        <div class="card-body">
+          <p>${cardData.description}</p>
+          <div class="personalized-content">${cardData.personalizedContent}</div>
+        </div>
+      `;
+  }
+  
+  card.appendChild(cardContent);
+  
+  // Record card view interaction
+  recordCardInteraction(cardData.id, 'VIEW');
+  
+  return card;
+}
+
+function populateFallbackCards() {
+  // Original card implementation as fallback
   const accountCard = document.querySelector('.dashboard-card.medium .card-content');
   if (accountCard) {
     accountCard.innerHTML = `
       <div class="account-row"><span>Chequing</span><span>$2,400</span></div>
       <div class="account-row"><span>TFSA Savings</span><span>$8,150</span></div>
       <div class="account-row"><span>Monthly Change</span><span><span class="badge positive">+8.2%</span></span></div>
-      <div class="account-row"><span>Primary Bank</span><span>${userData.bank || '—'}</span></div>
+      <div class="account-row"><span>Primary Bank</span><span>${userData.bank || '---'}</span></div>
       <div class="account-row"><span>Total</span><span>$10,550</span></div>`;
   }
 
@@ -556,6 +707,87 @@ function populateDashboardCards() {
         <span>${userData.timeline} ${userData.timeline == 1 ? 'year' : 'years'}</span>
       </div>`;
   }
+  
+  // Add edit buttons to all dashboard cards
+  addCardEditButtons();
+}
+
+function addCardEditButtons() {
+  const cards = document.querySelectorAll('.dashboard-card');
+  console.log('Found cards:', cards.length);
+  
+  cards.forEach((card, index) => {
+    // Skip if card already has edit buttons
+    if (card.querySelector('.card-edit-buttons')) {
+      console.log(`Card ${index} already has edit buttons, skipping`);
+      return;
+    }
+    
+    console.log(`Adding edit buttons to card ${index}`);
+    
+    const editButtons = document.createElement('div');
+    editButtons.className = 'card-edit-buttons';
+    editButtons.innerHTML = `
+      <button class="card-delete-btn" title="Delete card">✕</button>
+      <button class="card-move-btn" title="Move card">☰</button>
+    `;
+    
+    card.appendChild(editButtons);
+    console.log(`Edit buttons added to card ${index}`);
+    
+    // Add event listeners
+    const deleteBtn = editButtons.querySelector('.card-delete-btn');
+    const moveBtn = editButtons.querySelector('.card-move-btn');
+    
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (confirm('Delete this dashboard card?')) {
+          card.remove();
+          console.log(`Card ${index} deleted`);
+          // Re-arrange remaining cards
+          rearrangeCards();
+        }
+      });
+    }
+    
+    if (moveBtn) {
+      moveBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        card.classList.add('dragging');
+        card.draggable = true;
+        console.log(`Card ${index} made draggable`);
+      });
+    }
+  });
+  
+  return `Added edit buttons to ${cards.length} cards`;
+}
+
+function rearrangeCards() {
+  const cards = document.querySelectorAll('.dashboard-card');
+  cards.forEach((card, index) => {
+    card.style.order = index;
+  });
+}
+
+function enableCardEditMode() {
+  const cards = document.querySelectorAll('.dashboard-card');
+  cards.forEach(card => {
+    card.classList.add('edit-mode');
+  });
+  addCardEditButtons();
+}
+
+function disableCardEditMode() {
+  const cards = document.querySelectorAll('.dashboard-card');
+  cards.forEach(card => {
+    card.classList.remove('edit-mode');
+    card.draggable = false;
+  });
+  
+  // Remove edit buttons
+  document.querySelectorAll('.card-edit-buttons').forEach(btn => btn.remove());
 }
 
 function getGoalBasedPortfolio() {
@@ -580,6 +812,12 @@ function getGoalBasedPortfolio() {
         <div class="holding-row"><span>TFSA vs RRSP Guide</span><span style="font-size:12px;color:var(--text-muted)">MoneySense</span></div>
         <div class="holding-row"><span>Index Investing Basics</span><span style="font-size:12px;color:var(--text-muted)">CDN Couch Potato</span></div>
         <div class="holding-row"><span>Emergency Fund 101</span><span style="font-size:12px;color:var(--text-muted)">Financial Post</span></div>` };
+    case 'custom':
+      const customGoalText = userData.customGoal || 'Your Custom Goal';
+      return { title:'Custom Goal', subtitle:`Personalized for: ${customGoalText}`, holdings:`
+        <div class="holding-row"><span>Goal-Based Strategy</span><span class="badge positive">Tailored</span></div>
+        <div class="holding-row"><span>Personalized Plan</span><span style="font-size:12px;color:var(--text-muted)">${customGoalText}</span></div>
+        <div class="holding-row"><span>Custom Investments</span><span class="badge positive">Flexible</span></div>` };
     default:
       return { title:'Balanced Portfolio', subtitle:'Diversified approach', holdings:`
         <div class="holding-row"><span>S&P 500 ETF (VFV)</span><span class="badge positive">+12.4%</span></div>
@@ -591,6 +829,7 @@ function getGoalBasedPortfolio() {
 function getPrimaryGoal() {
   const priority = ['debt-payoff','saving','emergency-fund','investing','growing','learning'];
   for (const g of priority) { if (userData.goals.includes(g)) return g; }
+  if (userData.goals.includes('custom')) return 'custom';
   return userData.goals[0] || 'saving';
 }
 
@@ -641,7 +880,15 @@ function getTimeline(goal, years) {
       '<strong>Month 1:</strong> Complete a basic personal finance course',
       '<strong>Month 3:</strong> Read 3 recommended books (start with MoneySense)',
       '<strong>Month 6:</strong> Join an investing community or subreddit',
-      `<strong>Year ${years}:</strong> Confident enough to manage your own portfolio`];
+      `<strong>Year ${years}:</strong> Confident enough to manage your own portfolio` ];
+    case 'custom': 
+      const customGoalText = userData.customGoal || 'Your Custom Goal';
+      return [
+        `<strong>Month 1:</strong> Create a personalized plan for: ${customGoalText}`,
+        '<strong>Month 3:</strong> Set up specific actions and milestones',
+        `<strong>Month 6:</strong> Review progress and adjust strategy`,
+        `<strong>Year ${Math.max(1,Math.floor(years*0.5))}:</strong> Key milestone achieved`,
+        `<strong>Year ${years}:</strong> Custom goal completed — celebrate your success!` ];
     default: return [
       '<strong>Month 1:</strong> Define your financial goals and set a monthly budget',
       '<strong>Month 3:</strong> Build a starter emergency fund ($1,000)',
@@ -823,4 +1070,291 @@ function showInlineError(form, message) {
 function removeFormError() {
   const err = document.querySelector('.form-error');
   if (err) err.remove();
+}
+
+// ============================================
+// DASHBOARD CUSTOMIZATION
+// ============================================
+
+function showCustomizationMenu() {
+  const dashboard = document.querySelector('.dashboard-content');
+  if (!dashboard) return;
+  
+  // Remove existing customization menu
+  hideCustomizationMenu();
+  
+  // Create dropdown menu
+  const menu = document.createElement('div');
+  menu.className = 'customization-menu';
+  menu.innerHTML = `
+    <div class="menu-header">Dashboard Options</div>
+    <div class="menu-item" id="edit-dashboard">✏️ Edit Dashboard</div>
+    <div class="menu-item" id="edit-profile">👤 Edit Profile</div>
+    <div class="menu-item" id="sign-out">🚪 Sign Out</div>
+  `;
+  
+  // Position menu below profile icon
+  const profileIcon = document.querySelector('.profile-icon');
+  if (profileIcon) {
+    const rect = profileIcon.getBoundingClientRect();
+    menu.style.position = 'fixed';
+    menu.style.top = `${rect.bottom + 8}px`;
+    menu.style.left = `${rect.left - 75}px`;
+    menu.style.zIndex = '1000';
+  }
+  
+  document.body.appendChild(menu);
+  
+  // Add event listeners
+  document.getElementById('edit-dashboard').addEventListener('click', function() {
+    enableEditMode();
+    hideCustomizationMenu();
+  });
+  
+  document.getElementById('edit-profile').addEventListener('click', function() {
+    showProfileEditor();
+    hideCustomizationMenu();
+  });
+  
+  document.getElementById('sign-out').addEventListener('click', function() {
+    auth.signOut().then(() => {
+      userData = { email:'', name:'', age:'', bank:'', goals:[], timeline:5, literacyLevel:null, isNewUser:true };
+      showScreen('login-screen');
+    });
+    hideCustomizationMenu();
+  });
+  
+  // Update profile icon to indicate customize mode
+  if (profileIcon) {
+    profileIcon.style.background = 'var(--accent)';
+    profileIcon.style.color = 'white';
+    profileIcon.textContent = '⚙';
+  }
+}
+
+function hideCustomizationMenu() {
+  // Remove menu
+  const menu = document.querySelector('.customization-menu');
+  if (menu) menu.remove();
+  
+  // Remove remove buttons
+  document.querySelectorAll('.chip-remove').forEach(btn => btn.remove());
+  
+  // Remove draggable functionality
+  makeChipsNotDraggable();
+  
+  // Remove plus button
+  const plusBtn = document.querySelector('.add-chip-btn');
+  if (plusBtn) plusBtn.remove();
+  
+  // Disable card editing
+  disableCardEditMode();
+  
+  // Reset profile icon
+  const profileIcon = document.querySelector('.profile-icon');
+  if (profileIcon) {
+    profileIcon.style.background = '';
+    profileIcon.style.color = '';
+    profileIcon.textContent = userData.name.charAt(0).toUpperCase();
+  }
+}
+
+function enableEditMode() {
+  console.log('Enabling edit mode...');
+  
+  // Add remove buttons to all existing chips
+  const chipResult = addRemoveButtonsToChips();
+  console.log('Remove buttons added:', chipResult);
+  
+  // Make chips draggable
+  const dragResult = makeChipsDraggable();
+  console.log('Chips made draggable:', dragResult);
+  
+  // Add plus button
+  const plusResult = addPlusButton();
+  console.log('Plus button added:', plusResult);
+  
+  // Enable card editing
+  const cardResult = enableCardEditMode();
+  console.log('Card edit mode enabled:', cardResult);
+  
+  console.log('Edit mode enabled successfully');
+}
+
+function showProfileEditor() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay profile-editor-modal';
+  modal.innerHTML = `
+    <div class="modal-box">
+      <div class="profile-editor-header">
+        <h3>Edit Profile</h3>
+        <button class="close-btn" id="close-profile">✕</button>
+      </div>
+      <div class="profile-editor-content">
+        <div class="profile-field">
+          <label>Email</label>
+          <input type="email" id="edit-email" value="${userData.email || ''}" readonly>
+        </div>
+        <div class="profile-field">
+          <label>Username</label>
+          <input type="text" id="edit-username" value="${userData.email ? userData.email.split('@')[0] : ''}">
+        </div>
+        <div class="profile-field">
+          <label>Name</label>
+          <input type="text" id="edit-name" value="${userData.name || ''}">
+        </div>
+        <div class="profile-field">
+          <label>Age</label>
+          <input type="number" id="edit-age" value="${userData.age || ''}" min="18" max="120">
+        </div>
+        <div class="profile-field">
+          <label>Bank</label>
+          <input type="text" id="edit-bank" value="${userData.bank || ''}">
+        </div>
+        <div class="profile-field">
+          <label>Postal Code</label>
+          <input type="text" id="edit-postal" value="${userData.postalCode || ''}" placeholder="A1A 1A1">
+        </div>
+        <div class="profile-field">
+          <label>Phone</label>
+          <input type="tel" id="edit-phone" value="${userData.phone || ''}" placeholder="(555) 123-4567">
+        </div>
+        <div class="profile-actions">
+          <button class="btn-save" id="save-profile">Save Changes</button>
+          <button class="btn-cancel" id="cancel-profile">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Event listeners
+  document.getElementById('close-profile').addEventListener('click', () => {
+    modal.remove();
+  });
+  
+  document.getElementById('save-profile').addEventListener('click', () => {
+    userData.email = document.getElementById('edit-email').value;
+    userData.name = document.getElementById('edit-name').value;
+    userData.age = parseInt(document.getElementById('edit-age').value);
+    userData.bank = document.getElementById('edit-bank').value;
+    userData.postalCode = document.getElementById('edit-postal').value;
+    userData.phone = document.getElementById('edit-phone').value;
+    
+    // Update profile display
+    populateUserProfile();
+    
+    modal.remove();
+    console.log('Profile updated');
+  });
+  
+  document.getElementById('cancel-profile').addEventListener('click', () => {
+    modal.remove();
+  });
+}
+
+function addRemoveButtonsToChips() {
+  const tags = document.querySelectorAll('.tag');
+  tags.forEach(tag => {
+    if (!tag.querySelector('.chip-remove')) {
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'chip-remove';
+      removeBtn.innerHTML = '×';
+      removeBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        tag.remove();
+      });
+      tag.style.position = 'relative';
+      tag.appendChild(removeBtn);
+    }
+  });
+}
+
+function makeChipsDraggable() {
+  const tags = document.querySelectorAll('.tag');
+  tags.forEach(tag => {
+    tag.draggable = true;
+    tag.style.cursor = 'move';
+    tag.addEventListener('dragstart', handleDragStart);
+    tag.addEventListener('dragover', handleDragOver);
+    tag.addEventListener('drop', handleDrop);
+  });
+}
+
+function makeChipsNotDraggable() {
+  const tags = document.querySelectorAll('.tag');
+  tags.forEach(tag => {
+    tag.draggable = false;
+    tag.style.cursor = 'default';
+  });
+}
+
+function addPlusButton() {
+  const profileCard = document.querySelector('.user-profile-card');
+  if (!profileCard) return;
+  
+  const plusBtn = document.createElement('button');
+  plusBtn.className = 'add-chip-btn';
+  plusBtn.innerHTML = '+';
+  plusBtn.addEventListener('click', showAddChipDialog);
+  profileCard.appendChild(plusBtn);
+}
+
+function showAddChipDialog() {
+  const chipName = prompt('Enter new chip name:');
+  if (chipName && chipName.trim()) {
+    addNewChip(chipName.trim());
+  }
+}
+
+function addNewChip(name) {
+  const profileCard = document.querySelector('.user-profile-card');
+  if (!profileCard) return;
+  
+  const goalsSection = profileCard.querySelector('.profile-goals');
+  if (!goalsSection) return;
+  
+  const newTag = document.createElement('span');
+  newTag.className = 'tag';
+  newTag.textContent = name;
+  goalsSection.appendChild(newTag);
+  
+  // Add to userData
+  if (!userData.customChips) userData.customChips = [];
+  userData.customChips.push(name);
+}
+
+// Drag and drop handlers
+let draggedElement = null;
+
+function handleDragStart(e) {
+  draggedElement = e.target;
+  e.target.style.opacity = '0.5';
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  if (e.target.classList.contains('tag') && draggedElement !== e.target) {
+    const parent = e.target.parentNode;
+    const allTags = Array.from(parent.children);
+    const draggedIndex = allTags.indexOf(draggedElement);
+    const targetIndex = allTags.indexOf(e.target);
+    
+    if (draggedIndex < targetIndex) {
+      parent.insertBefore(draggedElement, e.target);
+    } else {
+      parent.insertBefore(e.target, draggedElement);
+    }
+  }
+  
+  if (draggedElement) {
+    draggedElement.style.opacity = '1';
+    draggedElement = null;
+  }
 }
